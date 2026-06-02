@@ -1,16 +1,46 @@
 # Copilot Instructions
 
-## Repository state
+## Build, test, and lint commands
 
-This repository currently contains only `LICENSE` as a tracked project file. Do not assume an application stack, package manager, test runner, or deployment target until those files are added.
+Run commands from the repository root:
+
+```sh
+dotnet restore
+dotnet build --no-restore --configuration Release
+dotnet test --configuration Release
+dotnet format --verify-no-changes
+```
+
+Run one test method with Microsoft Testing Platform and xUnit v3:
+
+```sh
+dotnet test tests/lib/BinkyLabs.PublicApi.Promoter.Tests.csproj -- --filter-method "*PromoteAsync_WhenUnshippedContainsEntries_AppendsToShipped"
+```
+
+Generate the same style of coverage output used in CI:
+
+```sh
+dotnet test --configuration Release --coverlet --coverlet-output-format cobertura
+dotnet tool install --global dotnet-reportgenerator-globaltool
+reportgenerator -reporttypes:"MarkdownSummaryGithub;Cobertura" -reports:**/coverage.cobertura.*.xml -targetdir:./reports/coverage
+```
 
 ## Architecture
 
-There is no implementation code, service layout, or module structure in the current repository state. Treat the repo as an empty scaffold rather than inferring a web app, library, or API architecture.
+This repository is a reusable GitHub Action that only handles the file-promotion portion of Public API export maintenance.
+
+- `action.yml` is a composite action that installs .NET 10 and runs the CLI project from `src/tool`.
+- `src/lib` contains the promotion engine. It finds matching `*.Unshipped*.txt` files, infers sibling shipped files in the same directory, applies `*REMOVED*` deletions, appends promoted lines, and resets unshipped files to `#nullable enable`.
+- `src/tool` contains the thin CLI wrapper that parses action inputs and writes action outputs such as `changed`, `files-changed`, and `changed-files`.
+- `tests/lib` covers the promotion engine behavior and edge cases. `tests/tool` covers CLI parsing and GitHub output writing.
+- `.github/workflows/dotnet.yml` follows the same sibling-repo testing pattern: format check, Release build, Coverlet-based coverage, ReportGenerator aggregation, and a hard failure below 95% line coverage.
 
 ## Key conventions
 
-Base recommendations on files that actually exist in the repository. If future work adds source code, build tooling, tests, or other assistant instruction files, incorporate those concrete conventions instead of inventing defaults.
+- Follow the `openapi-overlays-dotnet` test stack: .NET 10, Microsoft Testing Platform, xUnit v3 (`xunit.v3.mtp-v2`), `coverlet.MTP`, and ReportGenerator.
+- Keep the action narrowly scoped to mutating shipped and unshipped export files. Do not move branch management, commits, pushes, or pull-request creation into this repository's runtime logic.
+- Preserve cross-platform output stability in the promotion engine: write LF line endings, emit forward-slash relative paths in action outputs, and treat `#nullable enable` plus `*REMOVED*` markers as part of the file format contract.
+- Use file-scoped namespaces and the existing `.editorconfig` style defaults rather than introducing alternative C# formatting patterns.
 
 ## Commit message format
 
@@ -43,15 +73,15 @@ The header must always include a `type` and a short description. Add a scope whe
 
 Use the scope to identify the package, project area, or repository surface affected by the change.
 
-Because this repository is currently empty, scope is optional until clearer boundaries exist. When helpful, use a scope that reflects the area being introduced or changed, such as `repo`, `github`, `docs`, or the name of a new project or package being added.
+Typical scopes here are `action`, `promoter`, `cli`, `tests`, `docs`, or `github`.
 
 ### Examples
 
 ```txt
-chore(repo): add initial repository scaffolding
-docs(readme): document project goals
-ci(github): add release workflow
-feat(api): add first promotion pipeline
+feat(action): add public API promotion action
+fix(promoter): preserve LF output when promoting shipped exports
+test(cli): cover GitHub output file generation
+ci(github): enforce 95 percent coverage threshold
 ```
 
 ### Breaking changes

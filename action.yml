@@ -1,0 +1,60 @@
+name: 'Promote Public API Exports'
+description: 'Move entries from *.Unshipped*.txt files into sibling *.Shipped*.txt files.'
+author: 'BinkyLabs'
+branding:
+  icon: 'arrow-up-circle'
+  color: 'blue'
+
+inputs:
+  repository-root:
+    description: 'Repository root to scan. Relative paths are resolved from the workflow workspace.'
+    required: false
+    default: '.'
+  unshipped-glob:
+    description: 'Optional glob used to locate unshipped export files. Defaults to scanning the full repository for **/*.Unshipped*.txt.'
+    required: false
+    default: ''
+
+outputs:
+  changed:
+    description: 'true when any shipped or unshipped file was modified.'
+    value: ${{ steps.promote.outputs.changed }}
+  files-changed:
+    description: 'Number of files modified.'
+    value: ${{ steps.promote.outputs.files-changed }}
+  entries-promoted:
+    description: 'Number of lines appended to shipped exports.'
+    value: ${{ steps.promote.outputs.entries-promoted }}
+  entries-removed:
+    description: 'Number of lines removed from shipped exports.'
+    value: ${{ steps.promote.outputs.entries-removed }}
+  changed-files:
+    description: 'Newline-delimited relative file paths that changed.'
+    value: ${{ steps.promote.outputs.changed-files }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 10.x
+
+    - name: Promote public API exports
+      id: promote
+      shell: pwsh
+      run: |
+        $projectPath = Join-Path $env:GITHUB_ACTION_PATH 'src/tool/BinkyLabs.PublicApi.Promoter.Cli.csproj'
+        $arguments = @(
+          'run',
+          '--project', $projectPath,
+          '--configuration', 'Release',
+          '--',
+          '--repository-root', '${{ inputs.repository-root }}'
+        )
+
+        if ('${{ inputs.unshipped-glob }}') {
+          $arguments += @('--unshipped-glob', '${{ inputs.unshipped-glob }}')
+        }
+
+        & dotnet @arguments

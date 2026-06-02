@@ -1,2 +1,10 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/lib/BinkyLabs.PublicApi.Promoter.csproj" />
+    <Project Path="src/tool/BinkyLabs.PublicApi.Promoter.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/lib/BinkyLabs.PublicApi.Promoter.Tests.csproj" />
+    <Project Path="tests/tool/BinkyLabs.PublicApi.Promoter.Cli.Tests.csproj" />
+  </Folder>
 </Solution>
