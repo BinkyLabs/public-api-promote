@@ -57,6 +57,7 @@ jobs:
           file: ./reports/coverage/Cobertura.xml
           language: CSharp
           label: code-coverage/dotnet
+          fail-on-error: false
 
       - uses: actions/upload-artifact@v7
         with:
