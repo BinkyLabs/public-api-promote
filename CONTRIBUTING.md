@@ -96,6 +96,10 @@ Typical scopes in this repository include `action`, `promoter`, `cli`, `tests`, 
 
 If a commit introduces a breaking change, either add `!` after the type or scope, or include a footer that starts with `BREAKING CHANGE:`.
 
+## Release process
+
+This repository uses Release Please to open and maintain release PRs from conventional commits on `main`. Stable versions are published directly, so keep commit messages precise so version bumps and changelog entries are generated correctly.
+
 ## Reporting bugs
 
 If you find a bug, please open an issue with a clear description, reproduction steps, and any relevant logs or example input files.

@@ -1,0 +1,36 @@
+{
+  "bootstrap-sha": "956a9f1ab604dbc779d55405d08f6201e5300251",
+  "branches": [
+    {
+      "name": "main"
+    }
+  ],
+  "exclude-paths": [
+    ".github",
+    ".vs",
+    ".vscode"
+  ],
+  "release-type": "simple",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "draft": false,
+  "packages": {
+    ".": {
+      "package-name": "public-api-promote",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "src/lib/BinkyLabs.PublicApi.Promoter.csproj",
+          "xpath": "//Project/PropertyGroup/Version"
+        },
+        {
+          "type": "xml",
+          "path": "src/tool/BinkyLabs.PublicApi.Promoter.Cli.csproj",
+          "xpath": "//Project/PropertyGroup/Version"
+        }
+      ]
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}

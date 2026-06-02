@@ -34,6 +34,7 @@ This repository is a reusable GitHub Action that only handles the file-promotion
 - `src/tool` contains the thin CLI wrapper that parses action inputs and writes action outputs such as `changed`, `files-changed`, and `changed-files`.
 - `tests/lib` covers the promotion engine behavior and edge cases. `tests/tool` covers CLI parsing and GitHub output writing.
 - `.github/workflows/dotnet.yml` follows the same sibling-repo testing pattern: format check, Release build, Coverlet-based coverage, ReportGenerator aggregation, and a hard failure below 95% line coverage.
+- `release-please-config.json`, `.release-please-manifest.json`, and `.github/workflows/release-please.yml` manage stable releases from `main` using Release Please and Conventional Commits.
 
 ## Key conventions
 
@@ -41,6 +42,7 @@ This repository is a reusable GitHub Action that only handles the file-promotion
 - Keep the action narrowly scoped to mutating shipped and unshipped export files. Do not move branch management, commits, pushes, or pull-request creation into this repository's runtime logic.
 - Preserve cross-platform output stability in the promotion engine: write LF line endings, emit forward-slash relative paths in action outputs, and treat `#nullable enable` plus `*REMOVED*` markers as part of the file format contract.
 - Use file-scoped namespaces and the existing `.editorconfig` style defaults rather than introducing alternative C# formatting patterns.
+- Treat Conventional Commits as release metadata, not just commit style: Release Please uses them to decide stable version bumps and changelog entries on `main`.
 
 ## Commit message format
 
