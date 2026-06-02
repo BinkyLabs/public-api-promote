@@ -240,9 +240,10 @@ public static class PublicApiPromoter
             throw new InvalidOperationException($"File '{unshippedFilePath}' is not a supported unshipped export.");
         }
 
+        string shippedMarker = MatchMarkerCasing(fileName.AsSpan(markerIndex, UnshippedMarker.Length), ShippedMarker);
         string shippedFileName = string.Concat(
             fileName.AsSpan(0, markerIndex),
-            ShippedMarker,
+            shippedMarker,
             fileName.AsSpan(markerIndex + UnshippedMarker.Length));
 
         return Path.Combine(Path.GetDirectoryName(unshippedFilePath)!, shippedFileName);
@@ -250,6 +251,19 @@ public static class PublicApiPromoter
 
     private static string NormalizeRelativePath(string relativePath) =>
         relativePath.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
+
+    private static string MatchMarkerCasing(ReadOnlySpan<char> sourceMarker, string targetMarker)
+    {
+        char[] result = targetMarker.ToCharArray();
+        for (int index = 0; index < result.Length && index < sourceMarker.Length; index++)
+        {
+            result[index] = char.IsLetter(sourceMarker[index]) && char.IsLower(sourceMarker[index])
+                ? char.ToLowerInvariant(result[index])
+                : char.ToUpperInvariant(result[index]);
+        }
+
+        return new string(result);
+    }
 
     private sealed record PromotionChange(
         string UnshippedFilePath,
