@@ -2,6 +2,8 @@
 
 `public-api-promote` is a reusable GitHub Action that promotes entries from `*.Unshipped*.txt` public API export files into sibling `*.Shipped*.txt` files.
 
+These files are commonly produced by the [.NET Public API analyzers](https://www.nuget.org/packages/Microsoft.CodeAnalysis.PublicApiAnalyzers), which help library authors track intentional public surface changes.
+
 It only performs the file mutation step. Branch creation, commits, pushes, and pull request management stay in the caller's workflow.
 
 ## How promotion works
@@ -14,6 +16,10 @@ For each matching unshipped export file, the action:
 4. Resets the unshipped file back to `#nullable enable`
 
 If the `unshipped-glob` input is omitted, the action scans the full repository for `*.Unshipped*.txt`.
+
+## Real-world example
+
+This action is meant to support workflows like [BinkyLabs/openapi-overlays-dotnet#329](https://github.com/BinkyLabs/openapi-overlays-dotnet/pull/329), which automatically promoted unshipped public API entries into the shipped export files and prepared the resulting changes for review.
 
 ## Usage
 

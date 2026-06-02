@@ -2,6 +2,8 @@
 
 This GitHub Action promotes entries from `*.Unshipped*.txt` public API export files into sibling `*.Shipped*.txt` files inside your repository.
 
+Those files are typically produced by [Microsoft.CodeAnalysis.PublicApiAnalyzers](https://www.nuget.org/packages/Microsoft.CodeAnalysis.PublicApiAnalyzers) in .NET library repositories.
+
 It only performs the file mutation step. Branch creation, commits, pushes, and pull request management remain in your surrounding workflow.
 
 ## Quick Start
@@ -17,6 +19,10 @@ It only performs the file mutation step. Branch creation, commits, pushes, and p
 - Scans the full repository by default, or a narrower subset when a glob is provided
 - Exposes outputs so surrounding workflows can decide whether to commit or open pull requests
 - Runs as a composite action with the repository's .NET implementation
+
+## Real-world example
+
+For an example of the kind of change this action is designed to produce, see [BinkyLabs/openapi-overlays-dotnet#329](https://github.com/BinkyLabs/openapi-overlays-dotnet/pull/329), which automatically promoted unshipped APIs to shipped exports for review.
 
 ## Usage
 
