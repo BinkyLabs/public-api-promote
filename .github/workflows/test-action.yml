@@ -1,0 +1,159 @@
+name: Test GitHub Action
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'action.yml'
+      - 'global.json'
+      - 'src/**'
+      - '.github/workflows/test-action.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    name: Test public-api-promote action
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Create fixture files
+        shell: bash
+        run: |
+          mkdir -p test-data/src/first
+          mkdir -p test-data/src/second
+
+          cat > test-data/src/first/PublicApi.Shipped.txt <<'EOF'
+          Existing.Api()
+          Removed.Api()
+          EOF
+
+          cat > test-data/src/first/PublicApi.Unshipped.txt <<'EOF'
+          #nullable enable
+          *REMOVED*Removed.Api()
+          Added.Api()
+          EOF
+
+          cat > test-data/src/second/PublicApi.Shipped.txt <<'EOF'
+          Stable.Api()
+          EOF
+
+          cat > test-data/src/second/PublicApi.Unshipped.txt <<'EOF'
+          #nullable enable
+          EOF
+
+      - name: Run action with repository root
+        id: promote
+        uses: ./
+        with:
+          repository-root: 'test-data'
+
+      - name: Verify action outputs
+        shell: bash
+        run: |
+          test "${{ steps.promote.outputs.changed }}" = "true"
+          test "${{ steps.promote.outputs.files-changed }}" = "2"
+          test "${{ steps.promote.outputs.entries-promoted }}" = "1"
+          test "${{ steps.promote.outputs.entries-removed }}" = "1"
+
+          echo "${{ steps.promote.outputs.changed-files }}" | grep -Fx 'src/first/PublicApi.Shipped.txt'
+          echo "${{ steps.promote.outputs.changed-files }}" | grep -Fx 'src/first/PublicApi.Unshipped.txt'
+
+      - name: Verify shipped and unshipped file contents
+        shell: bash
+        run: |
+          cat > test-data/expected-first-shipped.txt <<'EOF'
+          Existing.Api()
+          Added.Api()
+          EOF
+
+          cat > test-data/expected-reset-unshipped.txt <<'EOF'
+          #nullable enable
+          EOF
+
+          diff -u test-data/expected-first-shipped.txt test-data/src/first/PublicApi.Shipped.txt
+          diff -u test-data/expected-reset-unshipped.txt test-data/src/first/PublicApi.Unshipped.txt
+          diff -u test-data/expected-reset-unshipped.txt test-data/src/second/PublicApi.Unshipped.txt
+
+          cat > test-data/expected-second-shipped.txt <<'EOF'
+          Stable.Api()
+          EOF
+
+          diff -u test-data/expected-second-shipped.txt test-data/src/second/PublicApi.Shipped.txt
+
+      - name: Run action again to verify no-op behavior
+        id: promote-again
+        uses: ./
+        with:
+          repository-root: 'test-data'
+
+      - name: Verify no-op outputs
+        shell: bash
+        run: |
+          test "${{ steps.promote-again.outputs.changed }}" = "false"
+          test "${{ steps.promote-again.outputs.files-changed }}" = "0"
+          test "${{ steps.promote-again.outputs.entries-promoted }}" = "0"
+          test "${{ steps.promote-again.outputs.entries-removed }}" = "0"
+          test -z "${{ steps.promote-again.outputs.changed-files }}"
+
+      - name: Create glob-specific fixture
+        shell: bash
+        run: |
+          mkdir -p test-data/limited/include
+          mkdir -p test-data/limited/exclude
+
+          cat > test-data/limited/include/PublicApi.Shipped.txt <<'EOF'
+          Included.Api()
+          EOF
+
+          cat > test-data/limited/include/PublicApi.Unshipped.txt <<'EOF'
+          #nullable enable
+          Added.Include.Api()
+          EOF
+
+          cat > test-data/limited/exclude/PublicApi.Shipped.txt <<'EOF'
+          Excluded.Api()
+          EOF
+
+          cat > test-data/limited/exclude/PublicApi.Unshipped.txt <<'EOF'
+          #nullable enable
+          Added.Exclude.Api()
+          EOF
+
+      - name: Run action with glob filter
+        id: promote-glob
+        uses: ./
+        with:
+          repository-root: 'test-data'
+          unshipped-glob: 'limited/include/**/*.Unshipped.txt'
+
+      - name: Verify glob behavior
+        shell: bash
+        run: |
+          test "${{ steps.promote-glob.outputs.changed }}" = "true"
+          test "${{ steps.promote-glob.outputs.files-changed }}" = "2"
+          echo "${{ steps.promote-glob.outputs.changed-files }}" | grep -Fx 'limited/include/PublicApi.Shipped.txt'
+          echo "${{ steps.promote-glob.outputs.changed-files }}" | grep -Fx 'limited/include/PublicApi.Unshipped.txt'
+          ! echo "${{ steps.promote-glob.outputs.changed-files }}" | grep -q 'limited/exclude'
+
+          cat > test-data/expected-include-shipped.txt <<'EOF'
+          Included.Api()
+          Added.Include.Api()
+          EOF
+
+          cat > test-data/expected-exclude-shipped.txt <<'EOF'
+          Excluded.Api()
+          EOF
+
+          diff -u test-data/expected-include-shipped.txt test-data/limited/include/PublicApi.Shipped.txt
+          diff -u test-data/expected-exclude-shipped.txt test-data/limited/exclude/PublicApi.Shipped.txt
+
+      - name: Upload action test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: action-test-results
+          path: test-data/
