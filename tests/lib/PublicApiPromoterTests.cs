@@ -229,6 +229,28 @@ public sealed class PublicApiPromoterTests : IDisposable
         Assert.Equal("Api.One()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task PromoteAsync_WhenUnshippedMarkerIsLowercase_PreservesSiblingFileMarkerCasing()
+    {
+        string shippedPath = CreateFile("src/PublicApi.shipped.txt", "Existing.Api()\n");
+        CreateFile("src/PublicApi.unshipped.txt", "#nullable enable\nAdded.Api()\n");
+
+        PublicApiPromotionResult result = await PublicApiPromoter.PromoteAsync(new PublicApiPromotionOptions
+        {
+            RepositoryRoot = _repositoryRoot
+        }, TestContext.Current.CancellationToken);
+
+        PublicApiPromotionFileResult fileResult = Assert.Single(result.FileResults);
+        Assert.Equal("src/PublicApi.shipped.txt", fileResult.ShippedFilePath);
+        Assert.Equal("src/PublicApi.unshipped.txt", fileResult.UnshippedFilePath);
+        Assert.Equal("Existing.Api()\nAdded.Api()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
+        string[] shippedFiles = Directory.GetFiles(Path.Combine(_repositoryRoot, "src"), "*.txt")
+            .Select(Path.GetFileName)
+            .Where(static fileName => fileName!.Contains(".shipped", StringComparison.OrdinalIgnoreCase))
+            .ToArray()!;
+        Assert.Equal(["PublicApi.shipped.txt"], shippedFiles);
+    }
+
     private string CreateFile(string relativePath, string content)
     {
         string fullPath = Path.Combine(_repositoryRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
