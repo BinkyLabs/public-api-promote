@@ -3,11 +3,6 @@ name: Test GitHub Action
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - 'action.yml'
-      - 'global.json'
-      - 'src/**'
-      - '.github/workflows/test-action.yml'
 
 permissions:
   contents: read
