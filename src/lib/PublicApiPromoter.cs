@@ -162,7 +162,15 @@ public static class PublicApiPromoter
 
         shippedLines.AddRange(promotedEntries);
 
-        string newShippedContent = BuildFileContent(shippedLines);
+        // Preserve the ordinal sort/dedup contract of the retired baseline script.
+        List<string> normalizedShippedLines =
+        [
+            .. new SortedSet<string>(
+                shippedLines.Where(static line => !string.IsNullOrWhiteSpace(line)),
+                StringComparer.Ordinal)
+        ];
+
+        string newShippedContent = BuildFileContent(normalizedShippedLines);
         string newUnshippedContent = $"{NullableEnableDirective}\n";
 
         bool shippedChanged = !string.Equals(shippedRawContent, newShippedContent, StringComparison.Ordinal);

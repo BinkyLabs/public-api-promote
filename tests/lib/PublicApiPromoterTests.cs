@@ -38,7 +38,7 @@ public sealed class PublicApiPromoterTests : IDisposable
         Assert.Equal(0, fileResult.EntriesRemoved);
         Assert.Equal("src/PublicApi.Unshipped.txt", fileResult.UnshippedFilePath);
         Assert.Equal("src/PublicApi.Shipped.txt", fileResult.ShippedFilePath);
-        Assert.Equal("Existing.Api()\nApi.One()\nApi.Two()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
+        Assert.Equal("Api.One()\nApi.Two()\nExisting.Api()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
         Assert.Equal("#nullable enable\n", await File.ReadAllTextAsync(unshippedPath, TestContext.Current.CancellationToken));
     }
 
@@ -113,7 +113,23 @@ public sealed class PublicApiPromoterTests : IDisposable
         PublicApiPromotionFileResult fileResult = Assert.Single(result.FileResults);
         Assert.Equal(1, fileResult.EntriesPromoted);
         Assert.Equal(1, fileResult.EntriesRemoved);
-        Assert.Equal("Api.Two()\nApi.Three()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
+        Assert.Equal("Api.Three()\nApi.Two()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task PromoteAsync_WhenUnshippedEntryAlreadyExistsInShipped_DeduplicatesAndSortsOrdinal()
+    {
+        string unshippedPath = CreateFile("src/PublicApi.Unshipped.txt", "#nullable enable\nApi.One()\nApi.Zebra()\n");
+        string shippedPath = CreateFile("src/PublicApi.Shipped.txt", "Api.Zebra()\nApi.Middle()\nApi.One()\n");
+
+        PublicApiPromotionResult result = await PublicApiPromoter.PromoteAsync(new PublicApiPromotionOptions
+        {
+            RepositoryRoot = _repositoryRoot
+        }, TestContext.Current.CancellationToken);
+
+        Assert.True(result.HasChanges);
+        Assert.Equal("Api.Middle()\nApi.One()\nApi.Zebra()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
+        Assert.Equal("#nullable enable\n", await File.ReadAllTextAsync(unshippedPath, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -209,7 +225,7 @@ public sealed class PublicApiPromoterTests : IDisposable
             RepositoryRoot = _repositoryRoot
         }, TestContext.Current.CancellationToken);
 
-        Assert.Equal("Existing.Api()\nApi.One()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
+        Assert.Equal("Api.One()\nExisting.Api()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
         Assert.Equal("#nullable enable\n", await File.ReadAllTextAsync(unshippedPath, TestContext.Current.CancellationToken));
     }
 
@@ -243,7 +259,7 @@ public sealed class PublicApiPromoterTests : IDisposable
         PublicApiPromotionFileResult fileResult = Assert.Single(result.FileResults);
         Assert.Equal("src/PublicApi.shipped.txt", fileResult.ShippedFilePath);
         Assert.Equal("src/PublicApi.unshipped.txt", fileResult.UnshippedFilePath);
-        Assert.Equal("Existing.Api()\nAdded.Api()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
+        Assert.Equal("Added.Api()\nExisting.Api()\n", await File.ReadAllTextAsync(shippedPath, TestContext.Current.CancellationToken));
         string[] shippedFiles = Directory.GetFiles(Path.Combine(_repositoryRoot, "src"), "*.txt")
             .Select(Path.GetFileName)
             .Where(static fileName => fileName!.Contains(".shipped", StringComparison.OrdinalIgnoreCase))
