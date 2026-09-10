@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/BinkyLabs/public-api-promote/compare/v1.0.2...v1.0.3) (2026-09-10)
+
+
+### Bug Fixes
+
+* use the action global.json path ([afd8d1e](https://github.com/BinkyLabs/public-api-promote/commit/afd8d1e9df2735c4b42c92f56cba6ed532ddc967))
+* use the action global.json path ([c576b8a](https://github.com/BinkyLabs/public-api-promote/commit/c576b8a9513bc29050d482c1ff3ac0ebeddd9450))
+
 ## [1.0.2](https://github.com/BinkyLabs/public-api-promote/compare/v1.0.1...v1.0.2) (2026-09-10)
 
 
