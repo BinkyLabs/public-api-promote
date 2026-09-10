@@ -61,8 +61,8 @@ jobs:
         shell: bash
         run: |
           cat > test-data/expected-first-shipped.txt <<'EOF'
-          Existing.Api()
           Added.Api()
+          Existing.Api()
           EOF
 
           cat > test-data/expected-reset-unshipped.txt <<'EOF'
@@ -135,8 +135,8 @@ jobs:
           ! echo "${{ steps.promote-glob.outputs.changed-files }}" | grep -q 'limited/exclude'
 
           cat > test-data/expected-include-shipped.txt <<'EOF'
-          Included.Api()
           Added.Include.Api()
+          Included.Api()
           EOF
 
           cat > test-data/expected-exclude-shipped.txt <<'EOF'
